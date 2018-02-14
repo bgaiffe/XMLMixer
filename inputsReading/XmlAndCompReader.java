@@ -156,8 +156,8 @@ public class XmlAndCompReader extends InputsReader {
 						ArrayList<Attribute> Att = new ArrayList<Attribute>();
 						for (int i = 0; i < this.xmlsr.getAttributeCount(); i++) {
 							Att.add(new Attribute(this.xmlsr
-									.getAttributeLocalName(i), this.xmlsr
-									.getAttributeNamespace(i), this.xmlsr
+									.getAttributeLocalName(i), this.xmlsr.getAttributePrefix(i),
+									this.xmlsr.getAttributeNamespace(i),this.xmlsr
 									.getAttributeValue(i)));
 						}
 						@SuppressWarnings("unused")
@@ -460,7 +460,7 @@ public class XmlAndCompReader extends InputsReader {
 		GenericNode xmlFileCurrentNode = new TextNode("bidon"); //$NON-NLS-1$
 		boolean res;
 
-		//System.out.println("read() ; firstIndexComp = "+firstIndexComp);
+		//System.err.println("read() ; firstIndexComp = "+firstIndexComp);
 
 		res = false;
 		txtPos = this.currentTextPos;

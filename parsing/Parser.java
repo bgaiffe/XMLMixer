@@ -545,7 +545,8 @@ public class Parser {
 
 		
 
-		
+		/* Il faudrait qu'on se prémunisse du BOM utf8 ! */
+		/* Une façon de le faire pourrait être de modifier la grammaire.... */ 
 
 		XMLGrammar g = new XMLGrammar();
 
@@ -554,12 +555,19 @@ public class Parser {
 		InputsReader xmlC = null;
 		
 		//System.out.print("arguments :"+argv[0]+" et "+argv[1]);
-		xmlC = new XmlAndCompReader(argv[0], argv[1]);
+		try{
+			xmlC = new XmlAndCompReader(argv[0], argv[1]);
+		
 		
 		
 
-		while (xmlC.read()) {
+			while (xmlC.read()) {
 			// we'll see later how to read the dag only when needed.
+			}
+		}
+		catch (Exception e){
+			System.out.println("Erreur(pour voir.... !");
+			e.printStackTrace();
 		}
 		InputDag d = xmlC.getDag();
 
@@ -580,87 +588,44 @@ public class Parser {
 		// System.err.println("dag construit");*/
 
 		System.err.println("Entrées lues");
-		
-		Parser p = new Parser(g, d);
-
-		p.parse(true);
-
+		Parser p = null;
+		try{
+			p = new Parser(g, d);
+		}
+		catch (Exception e){
+			System.out.println("Création parser");
+			e.printStackTrace();
+		};
+		try{
+			p.parse(true);
+		}
+		catch (Exception e){
+			System.out.println("Sur le parsing...");
+			e.printStackTrace();
+		}
 		//System.out.println("le chart après parsing :");
 		//System.out.println(p.getChart());
 
 		//System.out.println("après le chart après parsing.");
 		
-		if (p.getChart().testSuccess(d.getInit(), d.getLast(),
-				new NonTerminal(g.getAxiom().getName()))) {
-			//System.out.println("Succes !");
-			//System.out.println("Résultat (grammaire)"); 
-			
-			ArrayList<ProductionRule> gramResProds = p.getChart()
-					.extractResult();
-			
-			//System.out.println("après extract résults");
-			
-			p.nullifyChartAndDag();
-
-			/*
-			 * Iterator<ProductionRule> itRes = gramResProds.iterator(); while
-			 * (itRes.hasNext()){ System.out.println(itRes.next()); };
-			 */
-			// we build a CFGrammar with the result.
-			CFGrammar gResult = new CFGrammar(new NonTerminal(g.getAxiom()
-					.getName()
-					+ "_" //$NON-NLS-1$
-					+ d.getInit().getId()
-					+ "_" //$NON-NLS-1$
-					+ d.getLast().getId()), gramResProds);
-
-			//System.out.println("gResult :");
-			//System.out.println(gResult);
-					
-			// On ne nettoie pas !
-			// gResult.cleanProds();
-			//System.out.println("après nettoyage");
-			//System.out.println(gResult);
-
-			// System.out.println("Résultat en XML");
-			// System.out.println(gResult.extractAResult(gResult.getAxiom()));
-
-			// System.out.println("A travers DOM :");
-			System.out.println(gResult.extractAResultThroughDom());
-		} else {
-			/*System.err.println("Echec !");
-			System.err.println("dernier état : "+d.getLast().getId());
-			System.err.println("dernière position : "+d.getLast().getTextPosition());
-			//System.out.println("failed items ");*/
-
-			while (!p.getChart().testSuccess(d.getInit(), d.getLast(),
-					new NonTerminal(g.getAxiom().getName()))) {
-				//System.err.println("Boucle correction");
-				p.repairDag(d.getInit());
-				//System.err.println("re Parsing");
-				p.parse(false);
-			}
-			
-			//System.err.println("Sorti de la boucle correction");
-			
+		try{
 			if (p.getChart().testSuccess(d.getInit(), d.getLast(),
 					new NonTerminal(g.getAxiom().getName()))) {
-				
-				
+				//System.out.println("Succes !");
+				//System.out.println("Résultat (grammaire)"); 
+			
 				ArrayList<ProductionRule> gramResProds = p.getChart()
 						.extractResult();
-				
-				/*Iterator<ProductionRule> itRes = gramResProds.iterator();
-				 	while (itRes.hasNext()){ System.out.println(itRes.next()); };*/
-				 
-				// we build a CFGrammar with the result.
-
+			
+				//System.out.println("après extract résults");
+			
 				p.nullifyChartAndDag();
 
-				//System.out.println("Après nullify chart and dag");
-				//System.out.println("état initial = "+d.getInit().getId());
-				//System.out.println("état final = "+d.getLast().getId());	
-				
+				/*
+				 * Iterator<ProductionRule> itRes = gramResProds.iterator(); while
+				 * (itRes.hasNext()){ System.out.println(itRes.next()); };
+				 */
+				// we build a CFGrammar with the result.
 				CFGrammar gResult = new CFGrammar(new NonTerminal(g.getAxiom()
 						.getName()
 						+ "_" //$NON-NLS-1$
@@ -668,8 +633,11 @@ public class Parser {
 						+ "_" //$NON-NLS-1$
 						+ d.getLast().getId()), gramResProds);
 
+				//System.out.println("gResult :");
+				//System.out.println(gResult);
+					
 				// On ne nettoie pas !
-				//gResult.cleanProds();
+				// gResult.cleanProds();
 				//System.out.println("après nettoyage");
 				//System.out.println(gResult);
 
@@ -678,11 +646,66 @@ public class Parser {
 
 				// System.out.println("A travers DOM :");
 				System.out.println(gResult.extractAResultThroughDom());
+			} else {
+				/*System.err.println("Echec !");
+				System.err.println("dernier état : "+d.getLast().getId());
+				System.err.println("dernière position : "+d.getLast().getTextPosition());
+				//System.out.println("failed items ");*/
 
-				// };
+				while (!p.getChart().testSuccess(d.getInit(), d.getLast(),
+						new NonTerminal(g.getAxiom().getName()))) {
+					//System.err.println("Boucle correction");
+					p.repairDag(d.getInit());
+					//System.err.println("re Parsing");
+					p.parse(false);
+				}
+			
+				//System.err.println("Sorti de la boucle correction");
+			
+				if (p.getChart().testSuccess(d.getInit(), d.getLast(),
+						new NonTerminal(g.getAxiom().getName()))) {
+				
+				
+					ArrayList<ProductionRule> gramResProds = p.getChart()
+							.extractResult();
+				
+					/*Iterator<ProductionRule> itRes = gramResProds.iterator();
+				 		while (itRes.hasNext()){ System.out.println(itRes.next()); };*/
+				 
+					// we build a CFGrammar with the result.
+
+					p.nullifyChartAndDag();
+
+					//System.out.println("Après nullify chart and dag");
+					//System.out.println("état initial = "+d.getInit().getId());
+					//System.out.println("état final = "+d.getLast().getId());	
+				
+					CFGrammar gResult = new CFGrammar(new NonTerminal(g.getAxiom()
+							.getName()
+							+ "_" //$NON-NLS-1$
+							+ d.getInit().getId()
+							+ "_" //$NON-NLS-1$
+							+ d.getLast().getId()), gramResProds);
+
+					// On ne nettoie pas !
+					//gResult.cleanProds();
+					//System.out.println("après nettoyage");
+					//System.out.println(gResult);
+
+					// System.out.println("Résultat en XML");
+					// System.out.println(gResult.extractAResult(gResult.getAxiom()));
+
+					// System.out.println("A travers DOM :");
+					System.out.println(gResult.extractAResultThroughDom());
+
+					// };
+				}
 			}
 		}
+		catch (Exception e){
+				System.out.println("Dans la réparation");
+				e.printStackTrace();
+		}	
+			
 	}
 }
-
-

@@ -267,7 +267,10 @@ import xmlNodes.ProcessingInstructionNode;
 					NamedNodeMap atts = res.getAttributes();
 					while (i.hasNext()) {
 						Attribute at = i.next();
-						Attr a = doc.createAttribute(at.getLocalName());
+						//C'est ici qu'on oublie le namespace !
+						//Attr a = doc.createAttribute(at.getLocalName());
+						System.err.println("ns uri="+at.getNameSpaceURI()+" qname="+at.getQName());
+						Attr a = doc.createAttributeNS(at.getNameSpaceURI(), at.getQName());
 						a.setValue(at.getValue());
 						atts.setNamedItem(a);
 						// res.appendChild(a);

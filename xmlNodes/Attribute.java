@@ -26,10 +26,18 @@ package xmlNodes;
 		String prefix;
 
 		public Attribute(String ln, String ns, String v) {
-			this.localName = ln;
-			this.nameSpace = ns;
-			this.value = v;
-			this.prefix = ""; //$NON-NLS-1$
+			if (ln.contains("xml:")){
+				this.localName=ln.split(":")[1];
+				this.nameSpace="http://www.w3.org/XML/1998/namespace";
+				this.prefix="xml";
+				this.value=v;
+			}
+			else{
+				this.localName = ln;
+				this.nameSpace = ns;
+				this.value = v;
+				this.prefix = ""; //$NON-NLS-1$
+			}
 		}
 
 		public Attribute(String ln, String p, String ns, String v) {
@@ -70,6 +78,17 @@ package xmlNodes;
 
 		public String getValue() {
 			return this.value;
+		}
+		public String getQName(){
+			if (this.prefix.compareTo("") != 0){
+				return this.prefix+":"+this.localName;
+			}
+			else{
+				return this.localName;
+			}
+		}
+		public String getNameSpaceURI(){
+			return this.nameSpace;
 		}
 	}
 
