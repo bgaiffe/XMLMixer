@@ -11,6 +11,9 @@
         </sealing>
     </manifest>
     <selectedElements exportClassFiles="true" exportJavaFiles="false" exportOutputFolder="false">
-        <file path="/Hello/.classpath"/>
+        <file path="/Mixer2/manifest"/>
+        <file path="/Mixer2/.project"/>
+        <javaElement handleIdentifier="=Mixer2/src"/>
+        <file path="/Mixer2/.classpath"/>
     </selectedElements>
 </jardesc>

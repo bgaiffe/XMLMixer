@@ -2,6 +2,8 @@
 
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tei="http://www.tei-c.org/ns/1.0" version="2.0" xmlns:atilf="http://www.atilf.fr" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xsl:output method="text"/>
   
   <xsl:function name="atilf:basename" as="xs:string">
     <xsl:param name="fileName" as="xs:string"/>
@@ -39,7 +41,7 @@
 	  <xsl:text> </xsl:text>
 	</xsl:if>
 	<xsl:for-each select="@*">
-	  <xsl:value-of select="local-name(.)"/>
+	  <xsl:value-of select="name(.)"/>
 	  <xsl:text>="</xsl:text>
 	  <xsl:value-of select="."/>
 	  <xsl:text>"</xsl:text>

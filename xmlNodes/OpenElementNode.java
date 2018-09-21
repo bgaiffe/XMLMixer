@@ -68,7 +68,189 @@ package xmlNodes;
 		}
 
 		@SuppressWarnings("unused")
+		
+		/* We have to collect attributes + namespace nodes in order to 
+		 * create correctly the attributes... (the problem is to get correctly the namespaces of the attributes into companion files.
+		 * in companion files, the open element nodes are out of any context. Therefore, when we have an attribute of the form :
+		 * pref:locaName="value", there must be, on the same node xmlns:pref="ns uri". 
+		 */
+		
 		public OpenElementNode(String ln) {
+			StringBuffer bf = new StringBuffer();
+			
+			
+			
+			
+			class AttributeAsTriplet{
+				String prefix;
+				String localName;
+				String value;
+				
+				AttributeAsTriplet(String p, String ln, String v){
+					prefix=p;
+					localName=ln;
+					value=v;
+				}
+				String getPrefix(){
+					return prefix;
+				}
+				String getLocalName(){
+					return localName;
+				}
+				String getValue(){
+					return value;
+				}
+				
+				public String getNsFromPrefix(ArrayList<AttributeAsTriplet> l, String pre){
+					boolean found;
+				
+					//String res;
+					Iterator<AttributeAsTriplet> it;
+					AttributeAsTriplet curTriple;
+					
+					found = false;
+					for (it=l.iterator();it.hasNext();){
+						curTriple = it.next();
+						found = ((curTriple.getLocalName().compareTo(pre)==0) && (curTriple.getPrefix().compareTo("xmlns")==0));
+						if (found){
+							return(curTriple.getValue());
+						}
+					}
+					return "";
+				}
+				
+				public String getDefaultNS(ArrayList<AttributeAsTriplet> l){
+					boolean found;
+					
+					Iterator<AttributeAsTriplet> it;
+					AttributeAsTriplet curTriple;
+					
+					found = false;
+					for (it=l.iterator();it.hasNext();){
+						curTriple = it.next();
+						found = ((curTriple.getLocalName().compareTo("xmlns")==0) && (curTriple.getPrefix().compareTo("")==0));
+						if (found){
+							return(curTriple.getValue());
+						}
+					}
+					return "";
+				
+				}
+				
+			}
+			
+			
+			
+			
+			
+			
+			ArrayList<AttributeAsTriplet> attListBeforeNameSpaces = new ArrayList<AttributeAsTriplet>();
+			
+			int i = 1;
+			String prefi;
+			String localNam;
+			
+			this.attributes = new ArrayList<Attribute>();
+
+			while (!Character.isWhitespace(ln.charAt(i)) && !(ln.charAt(i) == '/')
+					& !(ln.charAt(i) == '>')) {
+				bf.append(ln.charAt(i));
+				i = i + 1;
+			}
+			this.localName = bf.toString();
+			// now for the attributes
+			while ((ln.charAt(i) != '/') & (ln.charAt(i) != '>')) {
+				while (Character.isWhitespace(ln.charAt(i))) {
+					i = i + 1;
+				}
+				if ((ln.charAt(i) != '/') & (ln.charAt(i) != '>')) {
+					StringBuffer attName = new StringBuffer();
+					while ((ln.charAt(i) != '=')
+							& !Character.isWhitespace(ln.charAt(i))) {
+						attName.append(ln.charAt(i));
+
+						i = i + 1;
+					}
+					// System.out.println("Attname = "+attName.toString());
+					while (ln.charAt(i) != '"' & ln.charAt(i) != '\'') {
+						i = i + 1;
+					}
+					char delim = ln.charAt(i);
+					i = i + 1;
+					StringBuffer value = new StringBuffer();
+
+					if (i == ln.length()) {
+						System.err.println("Pb element " + ln); //$NON-NLS-1$
+					}
+
+					while (ln.charAt(i) != delim) {
+						value.append(ln.charAt(i));
+
+						if (i == ln.length()) {
+							System.err.println("Pb element " + ln); //$NON-NLS-1$
+						}
+
+						i = i + 1;
+					}
+					i = i + 1;
+					
+					if (attName.toString().contains(":")){
+						prefi=attName.toString().split(":")[0];
+						localNam=attName.toString().split(":")[1];
+					}
+					else{
+						prefi="";
+						localNam=attName.toString();
+					}
+					attListBeforeNameSpaces.add(new AttributeAsTriplet(prefi, localNam, value.toString()));
+					
+					
+				}
+			}
+			
+			this.nameSpace = new AttributeAsTriplet("", "", "").getDefaultNS(attListBeforeNameSpaces);
+			/* we take each of the "attributes as triplets" in order to :
+			 *    determine the namesspaces of each attribute
+			 *    determine the namespace of the openAttribute node
+			 */
+			
+			//ArrayList<AttributeAsTriplet>
+			//attListBeforeNameSpaces
+			
+			Iterator<AttributeAsTriplet> it;
+			AttributeAsTriplet attCour;
+			
+			for (it = attListBeforeNameSpaces.iterator(); it.hasNext(); ){
+				// 4 different posibilities :
+				//  xmlns=" "                  no action
+				//  xmlns:something=""         no action
+				//  prefix:ln=value            create attribute
+				//  ln = value;                create attribute
+				
+				attCour = it.next();
+				if ((attCour.getPrefix().compareTo("xmlns")==0) || (attCour.getPrefix().compareTo("")== 0 && attCour.getLocalName().compareTo("xmlns")==0)){
+					// do nothing !
+				}
+				else{
+					this.attributes.add(new Attribute(attCour.getLocalName(), 
+								       				  attCour.getPrefix(), 
+								       				  attCour.getNsFromPrefix(attListBeforeNameSpaces, attCour.getPrefix()),
+								       				  attCour.getValue()));
+				}
+			}
+						     
+			
+			if (ln.charAt(ln.length() - 2) == '/') {
+				this.autoClose = true;
+			} else {
+				this.autoClose = false;
+			}
+			// nameSpace = "";
+			this.id = ""; //$NON-NLS-1$
+			this.qName = this.localName;
+		}
+		
+		/*public OpenElementNode(String ln) {
 			StringBuffer bf = new StringBuffer();
 			int i = 1;
 
@@ -115,11 +297,15 @@ package xmlNodes;
 						i = i + 1;
 					}
 					i = i + 1;
-					if (attName.toString().compareTo("xmlns") == 0) { //$NON-NLS-1$
+					
+					//modif BG. 18/09/2018 namespace iff we do not have xmlns:something
+					// pour bien faire, il faudrait voir si on a un namespace node parmi les "attributs"
+					if ((attName.toString().compareTo("xmlns:") != 0) && (attName.toString().compareTo("xmlns") == 0)) { //$NON-NLS-1$
 
 						this.nameSpace = value.toString();
 						// System.out.println("added ns = "+nameSpace);
 					} else {
+						// deux cas : namespace node ou attribut.
 						// System.out.println("valeur = "+value.toString());
 						this.attributes.add(new Attribute(attName.toString(), "", //$NON-NLS-1$
 								value.toString()));
@@ -135,7 +321,7 @@ package xmlNodes;
 			// nameSpace = "";
 			this.id = ""; //$NON-NLS-1$
 			this.qName = this.localName;
-		}
+		}*/
 
 		public String getQName() {
 			return this.qName;
