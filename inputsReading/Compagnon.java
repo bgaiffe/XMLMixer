@@ -68,13 +68,17 @@ public class Compagnon {
 		// GenericNode gn;
 		LigneComp deb, fi;
 		int lineNumber = 0;
+		int j = 0;
 
 		this.tableauCompagnon = new ArrayList<LigneComp>();
 
 		// a line in the companion file :
 		token = tr.next();
 		while (tr.hasNext()) {
-
+			j = j+1;
+			if (j % 1000 == 0){
+				System.err.print(".");
+			};
 			if (token.getType() == GenericNode.INT_NODE) { // IntNode
 				debut = ((IntNode) token).getValue();
 				lineNumber = lineNumber + 1;
@@ -137,7 +141,9 @@ public class Compagnon {
 		}
 		
 		// we sort by ascending indexes int the Text.
+		System.err.println("\n sorting");
 		Collections.sort(this.tableauCompagnon);
+		System.err.println("\n sorted");
 	}
 
 	@SuppressWarnings("unused")

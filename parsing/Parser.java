@@ -87,30 +87,7 @@ public class Parser {
 		return this.resGrammar;
 	}
 
-	@SuppressWarnings("unused")
-	/*public ArrayList<ParsingItem> getFailedItems(InputDagState init) {
-		int levelMax = 0;
-		// int i;
 
-		//System.err.println("getFailedItems DEBUT");
-		Iterator<ParsingItem> iicor = this.itemsForCorrection.iterator();
-		ArrayList<ParsingItem> res = new ArrayList<ParsingItem>();
-		ParsingItem itemCour;
-		while (iicor.hasNext()) {
-			itemCour = iicor.next();
-			// what is the level of itemCour ?
-			System.err.println("getFailedItems : On regarde "+itemCour+" de niveau "+itemCour.getJ().getLevel());
-			
-			
-			if (itemCour.getJ().getLevel() > levelMax) {
-				res = new ArrayList<ParsingItem>();
-				levelMax = itemCour.getJ().getLevel();
-			}
-			res.add(itemCour);
-		}
-		return res;
-		// return itemsForCorrection;
-	}*/
 	
 	public ArrayList<ScanningFailure> getScanFailures(InputDagState init){
 		int levelMax = 0;
@@ -198,37 +175,7 @@ public class Parser {
 						//this.itemsForCorrection.add(item);
 						this.failuresForCorrection.add(new ScanningFailure(item, t));
 					}
-					/*
-					 * else{
-					 * System.out.println("failed on not closing : "+failedGn
-					 * +" expected at textPos ="
-					 * +j.getTextPosition()+" and state "
-					 * +j.getId()+" there was "
-					 * +t.getNode()+" and item.getI().getTextPosition() = "
-					 * +item.getI().getTextPosition()); }
-					 */
-
-					// we are interested in :
-					// the last failure were we fail on a closing bracket and we
-					// read
-					// another closing bracket.
-					// moreover, we want corrections that are global to a
-					// textPosition, that is
-					// corrections that are needed for all paths in the dag.
-					// the problem is that we have gone through opening
-					// brackets...
-					// on peut faire la différence entre des items qui ont
-					// débuté dans
-					// le dag courant et les autres !
-					// -> on ne fait pas de correction pour un item dont l'état
-					// de début est à la textposition du dag.
-					// à chaque scan à partir d'une état initial (transition
-					// d'un dag à un autre),
-					// on oublie les éléments de l'étape précédente.
-					// ensuite, on garde
-					// les items en échec sur balise fermante à condition que
-					// l'état de départ de l'item ne soit pas à la text position
-					// courante.
+				
 				}
 			}
 		} else if (item.isPredictable()) {
@@ -282,10 +229,7 @@ public class Parser {
 									curItem.getDottedRule().getDot()), curItem
 							.getDottedRule().getDot() + 1);
 
-					/*
-					 * newDr = new DottedRule(curItem.getDottedRule().getRule(),
-					 * curItem.getDottedRule().getDot()+1);
-					 */
+				
 
 					newItem = new ParsingItem(newDr, curItem.getI(),
 							item.getJ());
@@ -297,23 +241,19 @@ public class Parser {
 		}
 	}
 
+	
+	// On devrait ne faire qu'une correction !
+	
 	@SuppressWarnings("unused")
 	public void repairDag(InputDagState init) {
-		//ArrayList<ParsingItem> failed = this.getFailedItems(init);
+
 		ArrayList<ScanningFailure> failedScans = this.getScanFailures(init);
-		//Iterator<ParsingItem> iFailed = failed.iterator();
 		Iterator<ScanningFailure> iFailedScan = failedScans.iterator();
 		
 		int localNbCorr = this.nbCorr;
 
-		
-		 //System.err.println("Repair Dag, failed items = "); while
-		 //(iFailed.hasNext()){ System.err.println(iFailed.next()); };
-		 
-
-		// we repair the dag...
-		// first, we compute the tokens we failed on, these are
-		// the closing brackets that follow the dot into the failed items.
+		InputDagState sdeb = null;
+		InputDagState sfin = null;
 		
 		ArrayList<Terminal> failedTok = new ArrayList<Terminal>();
 
@@ -325,7 +265,7 @@ public class Parser {
 		String nameSpace = new String(""); //$NON-NLS-1$
 		InputDagTransition failedTrans = null;
 		
-		while (iFailedScan.hasNext()) {
+		//while (iFailedScan.hasNext()) {       //BG 26/02/2019
 			
 			curFailure = iFailedScan.next();
 			curFailItem = curFailure.getItem();
@@ -349,12 +289,22 @@ public class Parser {
 			if (!found) {
 				failedTok.add(((Terminal) curFailItem.getDottedSymbol()));
 				// we also modify the opening bracket !
-				//System.err.println("repairDag item to modify "+curFail+" avec pour next : "+nbCorr);
+				System.err.println("repairDag item to modify "+curFailItem+" avec pour next : "+nbCorr);
 				nameSpace = curFailItem.putNextOnOpeningBracket(localNbCorr);
 				localNbCorr = localNbCorr + 1;
 				failedTrans = curFailure.getTrans();
-			}
-		}
+				sdeb = curFailItem.getI();
+				sfin = curFailItem.getJ();
+				Iterator<InputDagTransition> idt;
+				idt=sfin.getTransitions().iterator();
+				System.err.println("++++++++++++++++++++++");
+				while (idt.hasNext()){
+					System.err.println(idt.next().getNode());
+				};
+				System.err.println("++++++++++++++++++++++");
+				/*on les met dans une liste des trucs à ajouter... */
+				/* du coup, on a des </x> et il faudra ajouter des </x> <x> sur l'état de début de l'item qui faile */
+		//}  BG 26/02/2019
 
 		// Pb : on peut maintenant échouer sur autre chose que des closing
 		// brackets !
@@ -387,6 +337,7 @@ public class Parser {
 		// we have to add a new list made of initialListsForState + closing
 		// bracket + opening one.
 		//
+		
 		Iterator<Terminal> failedTokIt = failedTok.iterator();
 		ArrayList<GenericNode> newToks, newToks2;
 		Terminal ftk;
@@ -414,10 +365,7 @@ public class Parser {
 			
 			this.nbCorr = this.nbCorr + 1;
 			if (initialListsForState == null) {
-				//System.out.println("initialListsForState = null");
-				//System.out.println("sate to modify = " + stateToModify
-				//		+ " at text position = "
-				//		+ stateToModify.getTextPosition());
+			
 			} else {
 				// the problem now, is that this inserts anywhere !
 				// it should follow the point of failure !
@@ -445,34 +393,31 @@ public class Parser {
 			// we should also add an attribute (@newt) into the
 			// item on the opening bracket.
 		}
-		// we have to rebuild the dag from stateToModify
-		// to its "final state".
-		// System.out.println("On reconstruit entre :"+stateToModify.getId()+" et "+
-		// stateToModify.getEtatFinal().getId());
-		// We have to build the new lists of Terminals in order to
-		// modify the Dag.
-		// each of these lists is made of a closing (failedTok) and the
-		// corersponding opening bracket.
-		//System.err.println("stateToModify = "+stateToModify);
+	
 		InputDagState oldFinal = stateToModify.getEtatFinal();
 		//System.err.println("oldFinal = "+oldFinal);
 		InputDagState newFinal = stateToModify.extendAutomaton(
 				initialListsForState, stateToModify.getTextPosition());
-		// System.out.println("On a reconstruit avec "+initialListsForState);
-		// we put back on newFinal, the transition wr had previously on
-		//
-
-		//System.err.println("reparation : oldFinal = "+oldFinal);
-		//if (oldFinal != null){
+	
+		/* Il faudrait faire un ou avec l'automte initial ! */
 		Iterator<InputDagTransition> itrans = oldFinal.getTransitions().iterator();
 		while (itrans.hasNext()) {
 			newFinal.addTransition(itrans.next());
-		}//}
+		}}
 		
-
-		//System.err.println("Le nouveau Dag :");
-		//System.err.println(theDag);
-		//System.err.println("end Dag");
+		/* On s'intéresse maintenant à l'autre bout de l'item en échec ! */
+		System.err.println("On veut ajouter à :");
+		System.err.println(sdeb);
+		
+		/* On veut lui ajouter </a> et <a> avec a le symbole sur lequel on a échoué... */
+		/* normalement, ce symbole est celui qui est présent en sFin */
+		//System.out.println("=======================");
+		//System.out.println(sfin);
+		/*Iterator<InputDagTransition> idt;
+		idt=sfin.getTransitions().iterator();
+		while (idt.hasNext()){
+			System.out.println(idt.next().getNode());
+		}*/
 	} 
 	
 	
@@ -519,10 +464,10 @@ public class Parser {
 			
 			textPosition = curItem.j.getTextPosition();
 			
-			/*if (textPosition - oldTextPosition > 10){
+			if (textPosition - oldTextPosition > 10){
 				System.err.print(".");
 				oldTextPosition = textPosition;
-			}*/
+			}
 			/*i = i + 1;
 			if (i % 10000 == 0){
 				System.err.println("taille chart ="+this.theChart.getSize());
@@ -560,10 +505,16 @@ public class Parser {
 		
 		
 		
-
+			System.err.println("bw");
+			int r = 0;
 			while (xmlC.read()) {
 			// we'll see later how to read the dag only when needed.
+				r = r+1;
+				if (r % 1000 == 0){
+					System.err.print("#");
+				}
 			}
+			System.err.println("après bw");
 		}
 		catch (Exception e){
 			System.out.println("Erreur(pour voir.... !");
@@ -654,7 +605,8 @@ public class Parser {
 
 				while (!p.getChart().testSuccess(d.getInit(), d.getLast(),
 						new NonTerminal(g.getAxiom().getName()))) {
-					//System.err.println("Boucle correction");
+					System.err.println("Boucle correction");
+					
 					p.repairDag(d.getInit());
 					//System.err.println("re Parsing");
 					p.parse(false);

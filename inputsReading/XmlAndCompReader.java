@@ -460,7 +460,7 @@ public class XmlAndCompReader extends InputsReader {
 		GenericNode xmlFileCurrentNode = new TextNode("bidon"); //$NON-NLS-1$
 		boolean res;
 
-		//System.err.println("read() ; firstIndexComp = "+firstIndexComp);
+		System.err.println("read() ; firstIndexComp = "+firstIndexComp);
 
 		res = false;
 		txtPos = this.currentTextPos;
@@ -477,6 +477,7 @@ public class XmlAndCompReader extends InputsReader {
 					&& xmlFileCurrentNode.getType() != GenericNode.TEXT_NODE) {
 				nodesFromXml.add(xmlFileCurrentNode);
 			}
+			
 		}
 		if (nodesFromXml.size() > 0) {
 			listsForDag.add(nodesFromXml);
